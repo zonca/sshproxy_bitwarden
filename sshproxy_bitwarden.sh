@@ -18,10 +18,10 @@
 # See LICENSE for full text.
 
 progname=$(basename $0)
-version="1.1.0"
+version="1.2.2"
 
 # Save tty state for trap function below
-original_tty_state=$(stty -g)
+[ -t 0 ] && original_tty_state=$(stty -g)
 
 tmpkey=''
 tmpcert=''
@@ -69,7 +69,7 @@ Bail () {
 	# restore terminal to original state, in case we're interrupted
 	# while reading password
 
-	stty $original_tty_state
+	[ -z ${original_tty_state+x} ] || stty $original_tty_state
 
 	# Go bye-bye
 	exit $exitcode
@@ -264,8 +264,11 @@ tmpkey="$(mktemp $tmpdir/key.XXXXXX)"
 tmpcert="$(mktemp $tmpdir/cert.XXXXXX)"
 tmppub="$(mktemp $tmpdir/pub.XXXXXX)"
 
+# for newer (8.10+) versions of curl, we need to default back to the http 1.1 protocol
+http1=$([ $(curl --help http | grep 'http1.1' | wc -l) = "1" ] && echo "--http1.1" || echo "")
+
 # And get the key/cert
-curl -s -S -X POST $opt_socks $url/create_pair/$scope/$opt_putty \
+curl $http1 -s -S -X POST $opt_socks $url/create_pair/$scope/$opt_putty \
 	-d "$data" -o $tmpkey -K - <<< "-u \"${user}:${pw}${otp}\""
 
 # Check for error
