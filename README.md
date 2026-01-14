@@ -1,5 +1,7 @@
 # sshproxy_bitwarden
 
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
+
 sshproxy is a small Bash script that fetches short-lived SSH keys from the NERSC
 sshproxy service. It also supports PuTTY key output and optional ssh-agent
 loading.
