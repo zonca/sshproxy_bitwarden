@@ -26,8 +26,8 @@ BW_ITEM="nersc sshproxy" ./sshproxy_bitwarden.sh
 2. Uses Bitwarden to retrieve:
    - the account password
    - the TOTP code
-3. Sends a POST request to the sshproxy server, authenticating with
-   "<password><otp>".
+3. Sends a POST request to the sshproxy server using the Bitwarden password
+   and OTP concatenated for authentication.
 4. Writes a private key, public key, and certificate into your `~/.ssh` (or
    chosen) directory.
 5. Optionally loads the private key into `ssh-agent` until the cert expires.
