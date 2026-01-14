@@ -18,7 +18,7 @@
 # See LICENSE for full text.
 
 progname=$(basename $0)
-version="1.2.2"
+version="1.2.2-bw.1"
 
 # Save tty state for trap function below
 [ -t 0 ] && original_tty_state=$(stty -g)
