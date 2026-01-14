@@ -1,4 +1,4 @@
-# sshproxy
+# sshproxy_bitwarden
 
 sshproxy is a small Bash script that fetches short-lived SSH keys from the NERSC
 sshproxy service. It also supports PuTTY key output and optional ssh-agent
