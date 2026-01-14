@@ -15,14 +15,13 @@
 # copies to the public, prepare derivative works, and perform publicly and display
 # publicly, and to permit other to do so.
 # 
-#
 # See LICENSE for full text.
 
 progname=$(basename $0)
-version="1.2.2"
+version="1.1.0"
 
 # Save tty state for trap function below
-[ -t 0 ] && original_tty_state=$(stty -g)
+original_tty_state=$(stty -g)
 
 tmpkey=''
 tmpcert=''
@@ -70,7 +69,7 @@ Bail () {
 	# restore terminal to original state, in case we're interrupted
 	# while reading password
 
-        [ -z ${original_tty_state+x} ] || stty $original_tty_state
+	stty $original_tty_state
 
 	# Go bye-bye
 	exit $exitcode
@@ -225,18 +224,36 @@ fi
 certfile="$idfile-cert.pub"
 pubfile="$idfile.pub"
 
-# Have user enter password+OTP.  Curl can do this, but does not
-# provide any control over the prompt
-#
-# N.B. INPWPROMPT variable is used in Bail() above for when password
-# prompt is interrupted by ctrl-c.  Otherwise terminal gets left in
-# a weird state.
+# Fetch password + OTP from Bitwarden.
+bw_item=${BW_ITEM:-nersc}
+if ! command -v bw >/dev/null 2>&1; then
+	Bail 1 "Bitwarden CLI (bw) is required but was not found in PATH"
+fi
 
-read -r -p "Enter the password+OTP for ${user}: " -s pw
-escaped_pw=$(printf "%q" "$pw")
+bw_cmd=(bw)
+if [[ -n "$BW_SESSION" ]]; then
+	bw_cmd=(bw --session "$BW_SESSION")
+fi
 
-# read -p doesn't output a newline after entry
-printf "\n"
+bw_status=$("${bw_cmd[@]}" status --raw 2>/dev/null)
+if printf '%s' "$bw_status" | grep -q '"status":"unlocked"\|^unlocked$'; then
+	printf "Bitwarden already unlocked.\n"
+else
+	printf "Bitwarden vault is locked; unlocking...\n"
+	bw_session=$(bw unlock --raw)
+	if [[ -z "$bw_session" ]]; then
+		Bail 1 "Failed to unlock Bitwarden; check master password"
+	fi
+	export BW_SESSION="$bw_session"
+	printf "Bitwarden unlock successful.\n"
+	bw_cmd=(bw --session "$BW_SESSION")
+fi
+
+pw=$("${bw_cmd[@]}" get password "$bw_item" 2>/dev/null)
+otp=$("${bw_cmd[@]}" get totp "$bw_item" 2>/dev/null)
+if [[ -z "$pw" || -z "$otp" ]]; then
+	Bail 1 "Failed to read password or OTP from Bitwarden item" "$bw_item"
+fi
 
 # Make temp files.  We want them in the same target directory as the
 # final keys
@@ -247,12 +264,9 @@ tmpkey="$(mktemp $tmpdir/key.XXXXXX)"
 tmpcert="$(mktemp $tmpdir/cert.XXXXXX)"
 tmppub="$(mktemp $tmpdir/pub.XXXXXX)"
 
-# for newer (8.10+) versions of curl, we need to default back to the http 1.1 protocol
-http1=$([ $(curl --help http | grep 'http1.1' | wc -l) = "1" ] && echo "--http1.1" || echo "")
-
 # And get the key/cert
-curl $http1 -s -S -X POST $opt_socks $url/create_pair/$scope/$opt_putty \
-	-d "$data" -o $tmpkey -K - <<< "-u \"${user}:${escaped_pw}\""
+curl -s -S -X POST $opt_socks $url/create_pair/$scope/$opt_putty \
+	-d "$data" -o $tmpkey -K - <<< "-u \"${user}:${pw}${otp}\""
 
 # Check for error
 err=$?
