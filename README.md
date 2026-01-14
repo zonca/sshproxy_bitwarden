@@ -2,14 +2,23 @@
 
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
-sshproxy is a small Bash script that fetches short-lived SSH keys from the NERSC
-sshproxy service. It also supports PuTTY key output and optional ssh-agent
-loading.
+sshproxy_bitwarden is a small Bash script that fetches short-lived SSH keys
+from the NERSC sshproxy service. It supports PuTTY key output, optional
+ssh-agent loading, and retrieves credentials from Bitwarden CLI ("bw").
 
-This version uses Bitwarden CLI ("bw") to supply both the account password and
-the OTP/TOTP code.
+Official NERSC documentation: https://docs.nersc.gov/connect/mfa/#sshproxy
 
-Official documentation: https://docs.nersc.gov/connect/mfa/#sshproxy
+## Quick start
+
+```bash
+./sshproxy_bitwarden.sh
+```
+
+If your Bitwarden item name is not `nersc`, set `BW_ITEM`:
+
+```bash
+BW_ITEM="nersc sshproxy" ./sshproxy_bitwarden.sh
+```
 
 ## How it works
 
@@ -28,9 +37,9 @@ Official documentation: https://docs.nersc.gov/connect/mfa/#sshproxy
 - Bash
 - `curl`, `ssh-keygen`, `mktemp`
 - Bitwarden CLI: `bw`
-- A Bitwarden item that contains:
-  - the password for the sshproxy account
-  - a TOTP secret for the same account
+- A Bitwarden item with:
+  - password for the sshproxy account
+  - TOTP secret for the same account
 
 ## Bitwarden configuration
 
